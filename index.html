@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Made by ishhnt: Rebirth</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: none; font-family: 'Segoe UI', sans-serif; }
+        body { overflow: hidden; background: #050505; color: white; }
+
+        .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+        
+        #loader-screen { background: #000; z-index: 2000; display: none; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top-color: #00ff88; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #garage-screen { background: linear-gradient(135deg, #1a1a1a, #000); }
+        .title { font-size: 32px; font-weight: 900; color: #fff; letter-spacing: 2px; margin-bottom: 30px; text-shadow: 0 5px 15px rgba(0,255,136,0.5); }
+        .car-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 90%; max-width: 450px; }
+        .btn-car { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 20px; color: white; font-weight: bold; border-radius: 16px; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); cursor: pointer; transition: 0.2s; }
+        .btn-car:active { transform: scale(0.95); background: rgba(0,255,136,0.2); border-color: #00ff88; }
+
+        #game-ui { display: none; }
+        #top-bar { position: absolute; top: 15px; left: 15px; z-index: 100; display: flex; gap: 10px; }
+        .icon-btn { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); padding: 10px 15px; border-radius: 30px; color: white; font-size: 12px; font-weight: bold; backdrop-filter: blur(8px); cursor: pointer; }
+        
+        #hud { position: absolute; top: 20px; right: 20px; text-align: right; z-index: 100; text-shadow: 0 2px 10px #000; }
+        #speed { font-size: 45px; font-weight: 900; line-height: 1; color: #fff; }
+        #score { font-size: 16px; font-weight: bold; color: #00ff88; margin-top: 5px; }
+
+        #controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 100; pointer-events: none; }
+        .ctrl-group { display: flex; gap: 15px; pointer-events: auto; }
+        .btn-pad { width: 70px; height: 70px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; backdrop-filter: blur(5px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+        .btn-pad:active { background: rgba(255,255,255,0.4); transform: scale(0.95); }
+        #btn-go { background: rgba(0, 255, 136, 0.2); border-color: #00ff88; color: #00ff88; font-weight: 900; font-size: 18px; }
+        #btn-b { background: rgba(255, 50, 50, 0.2); border-color: #ff3333; color: #ff3333; font-weight: 900; font-size: 22px; }
+
+        #radio-menu { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10,10,10,0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 30px; width: 280px; text-align: center; z-index: 500; display: none; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        #track-info { margin: 15px 0; font-size: 18px; color: #00ff88; font-weight: bold; }
+        .radio-controls { display: flex; justify-content: center; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="loader-screen" class="screen"><div class="spinner"></div><h2 style="letter-spacing: 2px;">LOADING WORLD...</h2></div>
+    
+    <div id="garage-screen" class="screen">
+        <div class="title">Made by ishhnt</div>
+        <div class="car-grid" id="garage-grid"></div>
+    </div>
+
+    <div id="radio-menu">
+        <h3 style="color:#aaa; font-size:14px; letter-spacing:1px">FM RADIO</h3>
+        <div id="track-info">Track: 5.mp3</div>
+        <div class="radio-controls">
+            <button class="icon-btn" id="rad-prev">◀</button>
+            <button class="icon-btn" id="rad-play">PLAY</button>
+            <button class="icon-btn" id="rad-next">▶</button>
+        </div>
+        <button class="icon-btn" style="margin-top:20px; width:100%" onclick="document.getElementById('radio-menu').style.display='none'">CLOSE</button>
+    </div>
+
+    <div id="game-ui">
+        <div id="top-bar">
+            <button class="icon-btn" onclick="location.reload()">LOBBY</button>
+            <button class="icon-btn" onclick="location.reload()">RESET</button>
+            <button class="icon-btn" onclick="document.getElementById('radio-menu').style.display='block'">RADIO</button>
+        </div>
+        <div id="hud"><div id="speed">0</div><div style="font-size: 12px; font-weight: bold; color: #aaa;">KM/H</div><div id="score">SCORE: 0</div></div>
+        <div id="controls">
+            <div class="ctrl-group"><div class="btn-pad" id="btn-l">◀</div><div class="btn-pad" id="btn-r">▶</div></div>
+            <div class="ctrl-group"><div class="btn-pad" id="btn-b">B</div><div class="btn-pad" id="btn-go">GO</div></div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        const CAR_LIST = [
+            { name:'MUSCLE', url:'https://raw.githack.com/ishhhnt/Highway-clash/main/classic_muscle_car.glb' },
+            { name:'KARLMANN', url:'https://raw.githack.com/ishhhnt/Highway-clash/main/karlmann_king.glb' },
+            { name:'G-WAGON', url:'https://raw.githack.com/ishhhnt/Highway-clash/main/mercedes_benz_g-class_w263.glb' },
+            { name:'NISSAN Z', url:'https://raw.githack.com/ishhhnt/Highway-clash/main/nissan_z_proto.glb' },
+            { name:'ROSSA', url:'https://raw.githack.com/ishhhnt/Highway-clash/main/rossa.glb' }
+        ];
+
+        let scene, camera, renderer, playerCar;
+        let activeNPCs = [];
+        let isGameRunning = false;
+        
+        let physics = { speed: 0, targetSpeed: 0.5, acceleration: 0.03, braking: 0.1, score: 0 };
+        const inputs = { left: false, right: false, go: false, brake: false };
+        const BOUNDARY = 16.5;
+
+        const audio = { engine: new Audio('sound/1.mp3'), brake: new Audio('sound/2.mp3'), radio: new Audio() };
+        audio.engine.loop = true; audio.radio.volume = 0.5; let currentTrack = 5;
+
+        document.getElementById('rad-play').onclick = () => { if(audio.radio.paused) { audio.radio.src = `sound/${currentTrack}.mp3`; audio.radio.play(); document.getElementById('rad-play').innerText = "PAUSE"; } else { audio.radio.pause(); document.getElementById('rad-play').innerText = "PLAY"; } };
+        const changeTrack = (dir) => { currentTrack += dir; if(currentTrack > 8) currentTrack = 5; if(currentTrack < 5) currentTrack = 8; document.getElementById('track-info').innerText = `Track: ${currentTrack}.mp3`; audio.radio.src = `sound/${currentTrack}.mp3`; audio.radio.play(); document.getElementById('rad-play').innerText = "PAUSE"; };
+        document.getElementById('rad-next').onclick = () => changeTrack(1);
+        document.getElementById('rad-prev').onclick = () => changeTrack(-1);
+
+        const garageGrid = document.getElementById('garage-grid');
+        CAR_LIST.forEach((car, index) => { const btn = document.createElement('button'); btn.className = 'btn-car'; btn.innerText = car.name; btn.onclick = () => launchGame(index); garageGrid.appendChild(btn); });
+
+        async function launchGame(selectedCarIndex) {
+            document.getElementById('garage-screen').style.display = 'none';
+            document.getElementById('loader-screen').style.display = 'flex';
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); 
+
+            // Camera Field of View adjusted for better speed sensation
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, 0.1, 3000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            // CRITICAL FIX FOR DARKNESS: Enable modern color space for bright textures
+            renderer.outputColorSpace = THREE.SRGBColorSpace; 
+            document.body.appendChild(renderer.domElement);
+
+            // BRIGHT LIGHTING SETUP
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
+            scene.add(hemiLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2.0); // The "Sun"
+            dirLight.position.set(20, 50, 20);
+            scene.add(dirLight);
+
+            buildEnvironment();
+
+            playerCar = await loadCarModel(CAR_LIST[selectedCarIndex].url);
+            playerCar.rotation.y = Math.PI;
+            scene.add(playerCar);
+
+            for(let i=0; i<4; i++) spawnNPC(-200 - (i * 150)); 
+
+            bindControls();
+
+            document.getElementById('loader-screen').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'block';
+            isGameRunning = true;
+            gameLoop();
+        }
+
+        function buildEnvironment() {
+            const texLoader = new THREE.TextureLoader();
+            
+            // Background Sky: image/2.png
+            texLoader.load('image/2.png', (tex) => { 
+                tex.colorSpace = THREE.SRGBColorSpace; // Keeps colors vivid
+                scene.background = tex; 
+            });
+
+            // Road: image/1.png
+            const roadMat = new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0.1 }); // Less reflective, more realistic road
+            texLoader.load('image/1.png', (tex) => {
+                tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+                tex.repeat.set(1, 2500); 
+                tex.colorSpace = THREE.SRGBColorSpace; // Fixes dark texture
+                roadMat.map = tex;
+                roadMat.needsUpdate = true;
+            });
+            const road = new THREE.Mesh(new THREE.PlaneGeometry(35, 100000), roadMat);
+            road.rotation.x = -Math.PI / 2;
+            road.position.z = -49000; 
+            scene.add(road);
+
+            // Walls: image/3.png
+            const wallMat = new THREE.MeshStandardMaterial({ roughness: 0.9 });
+            texLoader.load('image/3.png', (tex) => {
+                tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+                tex.repeat.set(1, 3000);
+                tex.colorSpace = THREE.SRGBColorSpace; // Fixes dark texture
+                wallMat.map = tex;
+                wallMat.needsUpdate = true;
+            });
+            const wallGeo = new THREE.BoxGeometry(2, 6, 100000);
+            const wallL = new THREE.Mesh(wallGeo, wallMat); wallL.position.set(-18.5, 3, -49000); scene.add(wallL);
+            const wallR = new THREE.Mesh(wallGeo, wallMat); wallR.position.set(18.5, 3, -49000); scene.add(wallR);
+        }
+
+        const gltfLoader = new GLTFLoader();
+
+        async function loadCarModel(url) {
+            try {
+                const gltf = await gltfLoader.loadAsync(url);
+                const model = gltf.scene;
+
+                // Fix darkness inside models
+                model.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        child.material.needsUpdate = true;
+                    }
+                });
+
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const scaleFactor = 8.5 / Math.max(size.x, size.z);
+                model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                const finalBox = new THREE.Box3().setFromObject(model);
+                model.position.y = -finalBox.min.y; 
+
+                return model;
+            } catch(error) { return new THREE.Mesh(new THREE.BoxGeometry(3,2,6), new THREE.MeshStandardMaterial({color: 0xff0000})); }
+        }
+
+        async function spawnNPC(startZ) {
+            const randomCar = CAR_LIST[Math.floor(Math.random() * CAR_LIST.length)];
+            const npcModel = await loadCarModel(randomCar.url);
+            npcModel.position.z = startZ; npcModel.position.x = (Math.random() * 28) - 14; 
+            scene.add(npcModel);
+            activeNPCs.push({ mesh: npcModel, speed: 0.6 + (Math.random() * 0.5) });
+        }
+
+        function bindControls() {
+            const addCtrl = (id, key) => {
+                const el = document.getElementById(id);
+                el.addEventListener('touchstart', (e) => { e.preventDefault(); inputs[key] = true; if(key === 'go') { audio.engine.play().catch(()=>{}); } if(key === 'brake') { audio.brake.currentTime = 0; audio.brake.play().catch(()=>{}); } });
+                el.addEventListener('touchend', (e) => { e.preventDefault(); inputs[key] = false; if(key === 'go') { audio.engine.pause(); } });
+            };
+            addCtrl('btn-l', 'left'); addCtrl('btn-r', 'right'); addCtrl('btn-go', 'go'); addCtrl('btn-b', 'brake');
+        }
+
+        function gameLoop() {
+            if(!isGameRunning) return;
+            requestAnimationFrame(gameLoop);
+
+            if(inputs.go) { physics.speed = THREE.MathUtils.lerp(physics.speed, 3.2, physics.acceleration); }
+            else if(inputs.brake) { physics.speed = THREE.MathUtils.lerp(physics.speed, 0, physics.braking); }
+            else { physics.speed = THREE.MathUtils.lerp(physics.speed, physics.targetSpeed, 0.02); }
+
+            if(inputs.left && playerCar.position.x > -BOUNDARY) playerCar.position.x -= 0.35;
+            if(inputs.right && playerCar.position.x < BOUNDARY) playerCar.position.x += 0.35;
+
+            playerCar.position.z -= physics.speed * 5;
+
+            // --- CHASE CAMERA UPDATE (CLOSER & LOWER) ---
+            camera.position.x = THREE.MathUtils.lerp(camera.position.x, playerCar.position.x * 0.5, 0.15); // Follows turning closely
+            camera.position.y = 3.5; // Lower to the ground (used to be 7)
+            camera.position.z = playerCar.position.z + 9; // Closer to the bumper (used to be 18)
+            camera.lookAt(playerCar.position.x, 1.5, playerCar.position.z - 20); // Looks slightly ahead on the road
+
+            activeNPCs.forEach((npc) => {
+                npc.mesh.position.z -= npc.speed * 5;
+                if (npc.mesh.position.z > playerCar.position.z + 20) { // Disappear as soon as passed
+                    npc.mesh.position.z = playerCar.position.z - 500 - (Math.random() * 200);
+                    npc.mesh.position.x = (Math.random() * 28) - 14;
+                }
+                if (playerCar.position.distanceTo(npc.mesh.position) < 4.0) {
+                    isGameRunning = false; audio.engine.pause();
+                    setTimeout(() => { alert("CRASHED! FINAL SCORE: " + Math.floor(physics.score)); location.reload(); }, 100);
+                }
+            });
+
+            physics.score += (physics.speed * 0.1);
+            document.getElementById('speed').innerText = Math.floor(physics.speed * 120);
+            document.getElementById('score').innerText = "SCORE: " + Math.floor(physics.score);
+
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
